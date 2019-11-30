@@ -24,7 +24,7 @@ def unesiNarudzbu(brojNarudzbe, rok, nacrt):
         print(error)
     
         
-
+#Funkcija je analogna funkciji unesiNarudzbu
 def unesiProizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2):
     upit = 'INSERT INTO proizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2)' + '\nVALUES(%s,%s,%s,%s,%s,%s,%s)'
     podaci = (nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2)
@@ -35,7 +35,30 @@ def unesiProizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2
         
     except Error as error:
         print(error)
-    
+
+#Funkcija je analogna funkciji unesiNarudzbu    
+def unesiRadniNalog(brojNaloga, brojNarudzbe, nacrt):
+    upit ='INSERT INTO radniNalog(brojNaloga, brojNarudzbe, nacrt)\nVALUES(%s, %s, %s)'
+    podaci = (brojNaloga, brojNarudzbe, nacrt)
+
+    try:
+        cursor.execute(upit, podaci)
+        vezaSaBazom.commit()
+        
+    except Error as error:
+        print(error)
+
+#Funkcija je analogna funkciji unesiNarudzbu    
+def unesiKolicinuProizvoda(brojNarudzbe, nacrt, kom):
+    upit ='INSERT INTO kolicinaProizvoda(brojNarudzbe, nacrt, kom)\nVALUES(%s, %s, %s)'
+    podaci = (brojNarudzbe, nacrt, kom)
+
+    try:
+        cursor.execute(upit, podaci)
+        vezaSaBazom.commit()
+        
+    except Error as error:
+        print(error)
      
 #Ucitavanja podataka iz excel tablice u dataframe objekt(2d array)
 #Header oznacava pocetak redaka tablice
