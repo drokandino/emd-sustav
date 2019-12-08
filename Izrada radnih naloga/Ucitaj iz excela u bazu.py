@@ -1,6 +1,5 @@
 import pandas as pd
 from mysql.connector import MySQLConnection, Error
-import datetime as dt
 
 
 #vezaSaBazom je MySQLConnection objekt
@@ -9,9 +8,29 @@ vezaSaBazom = MySQLConnection(host='localhost',
                                user='root', password='1')
 #Instanciranje cursor objekta
 cursor = vezaSaBazom.cursor()
+
+cursor.execute("SET NAMES 'utf8'")
+cursor.execute('SET CHARACTER SET utf8')
         
 #Funkcija modificira bazu. Dodaje novi red u tablicu Narudzba
 def unesiNarudzbu(brojNarudzbe, rok, nacrt):
+    #Modifikacija podataka
+    
+    #Brisanje nan vrijednosti
+    if pd.isna(brojNarudzbe):
+        print("Nema primarnog kljuca")
+        brojNarudzbe = 1111
+    elif pd.isna(rok):
+        rok = ""
+    elif pd.isna(nacrt):
+        nacrt = ""
+        
+    
+    #Rok(datum)
+    dan = rok[:2]
+    mjesec = rok[3:5]
+    rok = "2019-"+ mjesec + "-" + dan
+    
     upit = 'INSERT INTO narudzba(brojNarudzbe, rok, nacrt)' + '\nVALUES(%s,%s,%s)'
     podaci = (brojNarudzbe, rok, nacrt)
     
@@ -36,17 +55,18 @@ def unesiProizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2
         dimenzija = dimenzija[1:]
     if dimenzija[0] == 'S':
        dimenzija = dimenzija[2:]
-    
+    if pd.isna(nacrt):
+        nacrt = 'nema'
     podaci = (nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2)
     
-    #Stvaranje liste iz tuple-a kako bi se mogli modificirati podaci
+    #Stvaranje liste iz tuple-a kako bi se mogli modificirati podaci, mogu se jednostavno modificirati podaci prije stvaranje tuplea
     #Iteracija kroz podatke u potrazi za nan vrijednostima
     #Nan vrijednost se mijenja sa praznim stringom
     lista = list(podaci)
     for (i, item) in enumerate(lista):
         if pd.isna(item):
             lista[i] = ""
-            
+    
     podaci = tuple(lista)
     
     try:
@@ -54,12 +74,19 @@ def unesiProizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2
         vezaSaBazom.commit()
         
     except Error as error:
-        print(error)
+        print(error, podaci[0])
         print("\n")
 
 #Funkcija je analogna funkciji unesiNarudzbu    
 def unesiRadniNalog(brojNaloga, brojNarudzbe, nacrt):
     upit ='INSERT INTO radniNalog(brojNaloga, brojNarudzbe, nacrt)\nVALUES(%s, %s, %s)'
+    
+    #Ciscenje podataka
+    if pd.isna(brojNarudzbe):
+        brojNarudzbe = 1111
+    if pd.isna(nacrt):
+        nacrt =  'nema'
+    
     podaci = (brojNaloga, brojNarudzbe, nacrt)
 
     try:
@@ -93,8 +120,11 @@ for i in tablicaNaloga.iterrows():
     redak = i[1]
     #Za svaki redak kojemu stupac RN. nije nan, unesi ga u bazu
     if pd.isna(redak[0]) == False:
-        unesiProizvod(redak['NACRT'], redak['NAZIV ARTIKLA'], redak['MATERIJAL'], redak['DIMENZIJA'], 
-                      redak['DULJINA'], redak['CNC 1'], redak['CNC 2'])
+        #unesiProizvod(redak['NACRT'], redak['NAZIV ARTIKLA'], redak['MATERIJAL'], redak['DIMENZIJA'], 
+        #              redak['DULJINA'], redak['CNC 1'], redak['CNC 2'])
+        
+        #unesiNarudzbu(redak['NARUDŽ.'], redak['ROK'], redak['NACRT'])
+        unesiRadniNalog(redak['RN.'], redak['NARUDŽ.'], redak['NACRT'])
     
     
 
