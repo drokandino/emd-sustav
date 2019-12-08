@@ -43,8 +43,7 @@ def unesiNarudzbu(brojNarudzbe, rok, nacrt):
     except Error as error:
         print(error)
     
-        
-#Funkcija je analogna funkciji unesiNarudzbu
+#Dodaje novi redak u tablicu proizvod        
 def unesiProizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2):
     upit = 'INSERT INTO proizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2)' + '\nVALUES(%s,%s,%s,%s,%s,%s,%s)'
     
@@ -59,15 +58,15 @@ def unesiProizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2
         nacrt = 'nema'
     podaci = (nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2)
     
-    #Stvaranje liste iz tuple-a kako bi se mogli modificirati podaci, mogu se jednostavno modificirati podaci prije stvaranje tuplea
+    #Stvaranje liste iz tuple-a kako bi se mogli modificirati podaci
     #Iteracija kroz podatke u potrazi za nan vrijednostima
     #Nan vrijednost se mijenja sa praznim stringom
     lista = list(podaci)
     for (i, item) in enumerate(lista):
         if pd.isna(item):
             lista[i] = ""
-    
     podaci = tuple(lista)
+    #Umijesto iznad napisanog bloka, podaci se mogu ocistiti prije stvaranje tuple-a
     
     try:
         cursor.execute(upit, podaci)
@@ -77,7 +76,7 @@ def unesiProizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2
         print(error, podaci[0])
         print("\n")
 
-#Funkcija je analogna funkciji unesiNarudzbu    
+#Dodaje novi redak u tablicu radniNalog
 def unesiRadniNalog(brojNaloga, brojNarudzbe, nacrt):
     upit ='INSERT INTO radniNalog(brojNaloga, brojNarudzbe, nacrt)\nVALUES(%s, %s, %s)'
     
@@ -96,7 +95,7 @@ def unesiRadniNalog(brojNaloga, brojNarudzbe, nacrt):
     except Error as error:
         print(error)
 
-#Funkcija je analogna funkciji unesiNarudzbu    
+#Dodaje novi redak u tablicu kolicinaProizvoda
 def unesiKolicinuProizvoda(brojNarudzbe, nacrt, kom):
     upit ='INSERT INTO kolicinaProizvoda(brojNarudzbe, nacrt, kom)\nVALUES(%s, %s, %s)'
     podaci = (brojNarudzbe, nacrt, kom)
