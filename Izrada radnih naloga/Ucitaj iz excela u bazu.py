@@ -98,6 +98,12 @@ def unesiRadniNalog(brojNaloga, brojNarudzbe, nacrt):
 #Dodaje novi redak u tablicu kolicinaProizvoda
 def unesiKolicinuProizvoda(brojNarudzbe, nacrt, kom):
     upit ='INSERT INTO kolicinaProizvoda(brojNarudzbe, nacrt, kom)\nVALUES(%s, %s, %s)'
+    
+    #Ciscenje podataka
+    if pd.isna(brojNarudzbe):
+        brojNarudzbe = 1111
+    elif pd.isna(nacrt):
+        nacrt = 'nema'
     podaci = (brojNarudzbe, nacrt, kom)
 
     try:
@@ -123,8 +129,8 @@ for i in tablicaNaloga.iterrows():
         #              redak['DULJINA'], redak['CNC 1'], redak['CNC 2'])
         
         #unesiNarudzbu(redak['NARUDŽ.'], redak['ROK'], redak['NACRT'])
-        unesiRadniNalog(redak['RN.'], redak['NARUDŽ.'], redak['NACRT'])
-    
+        #unesiRadniNalog(redak['RN.'], redak['NARUDŽ.'], redak['NACRT'])
+        unesiKolicinuProizvoda(redak['NARUDŽ.'], redak['NACRT'], redak['KOM'])
     
 
 #Brisanje cursor objekta    
