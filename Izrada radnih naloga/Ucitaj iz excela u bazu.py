@@ -1,118 +1,95 @@
 import pandas as pd
 from mysql.connector import MySQLConnection, Error
 
-
-#vezaSaBazom je MySQLConnection objekt
+#Otvori vezu sa bazom
 vezaSaBazom = MySQLConnection(host='localhost',
-                               database='emd',
+                               database='emd_novi',
                                user='root', password='1')
-#Instanciranje cursor objekta
+
+#Incijalizacija cursor objekta
 cursor = vezaSaBazom.cursor()
 
-cursor.execute("SET NAMES 'utf8'")
-cursor.execute('SET CHARACTER SET utf8')
-        
-#Funkcija modificira bazu. Dodaje novi red u tablicu Narudzba
-def unesiNarudzbu(brojNarudzbe, rok, nacrt):
-    #Modifikacija podataka
+#Funkcija za uons podataka u relaciju pozicija
+def unesiPoziciju(naziv, nacrt):
+    upit ='INSERT INTO pozicija(naziv, nacrt)\nVALUES(%s, %s)'
     
-    #Brisanje nan vrijednosti
-    if pd.isna(brojNarudzbe):
-        print("Nema primarnog kljuca")
-        brojNarudzbe = 1111
-    elif pd.isna(rok):
-        rok = ""
-    elif pd.isna(nacrt):
-        nacrt = ""
-        
-    
-    #Rok(datum)
-    dan = rok[:2]
-    mjesec = rok[3:5]
-    rok = "2019-"+ mjesec + "-" + dan
-    
-    upit = 'INSERT INTO narudzba(brojNarudzbe, rok, nacrt)' + '\nVALUES(%s,%s,%s)'
-    podaci = (brojNarudzbe, rok, nacrt)
-    
-    try:
-        #Generiranje upita i slanje upita bazi
-        cursor.execute(upit, podaci)
-        vezaSaBazom.commit()
-        
-    #Hvatanje errora
-    except Error as error:
-        print(error)
-    
-#Dodaje novi redak u tablicu proizvod        
-def unesiProizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2):
-    upit = 'INSERT INTO proizvod(nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2)' + '\nVALUES(%s,%s,%s,%s,%s,%s,%s)'
-    
-    
-    ##Ciscenje podataka
-    #Dimenzija mora sadrzavati samo brojke, rezanje stringa nakon pojavljivanja slova 
-    if dimenzija[0] == 'Ø':
-        dimenzija = dimenzija[1:]
-    if dimenzija[0] == 'S':
-       dimenzija = dimenzija[2:]
     if pd.isna(nacrt):
-        nacrt = 'nema'
-    podaci = (nacrt, nazivArtikla, materijal, dimenzija, duljina, cnc1, cnc2)
+        nacrt = 'nema' #nacrt je PK, vise proizvoda moze neimati nacrt
     
-    #Stvaranje liste iz tuple-a kako bi se mogli modificirati podaci
-    #Iteracija kroz podatke u potrazi za nan vrijednostima
-    #Nan vrijednost se mijenja sa praznim stringom
-    lista = list(podaci)
-    for (i, item) in enumerate(lista):
-        if pd.isna(item):
-            lista[i] = ""
-    podaci = tuple(lista)
-    #Umijesto iznad napisanog bloka, podaci se mogu ocistiti prije stvaranje tuple-a
+    #Keriraj tuple sa podacima
+    podaci = (naziv, nacrt)
     
     try:
         cursor.execute(upit, podaci)
         vezaSaBazom.commit()
         
     except Error as error:
-        print(error, podaci[0])
-        print("\n")
+        print(error)
 
-#Dodaje novi redak u tablicu radniNalog
-def unesiRadniNalog(brojNaloga, brojNarudzbe, nacrt):
-    upit ='INSERT INTO radniNalog(brojNaloga, brojNarudzbe, nacrt)\nVALUES(%s, %s, %s)'
+#Ako narudzbenica ne postoji onda se koristi ovaj ID
+narudzbenica_id = 0
+
+def unesiNarudzbu(narudzbenica):
+    #Koristienje globalne varijable u funkciji
+    global narudzbenica_id
     
-    #Ciscenje podataka
-    if pd.isna(brojNarudzbe):
-        brojNarudzbe = 1111
+    upit ='INSERT INTO narudzba(narudzbenica)\nVALUES(%s)'
+    
+    #if pd.isna(narudzbenica):
+    #   narudzbenica = narudzbenica_id #narudzbenica je PK!
+    #   narudzbenica_id += 1
+        
+    podaci = (narudzbenica,)
+    
+    try:
+        cursor.execute(upit, podaci)
+        vezaSaBazom.commit()
+        
+    except Error as error:
+        print(error)
+    
+def unesiNalog(nalog):
+    upit ='INSERT INTO radniNalog(brojNaloga)\nVALUES(%s)'
+    
+    podaci = (nalog,)
+    
+    try:
+        cursor.execute(upit, podaci)
+        vezaSaBazom.commit()
+        
+    except Error as error:
+        print(error)
+    
+    
+def unesiNalogPoziciju(nacrt, nalog):
+    upit ='INSERT INTO nalogPozicija(nacrt, nalog)\nVALUES(%s, %s)'
+    
     if pd.isna(nacrt):
-        nacrt =  'nema'
+        nacrt = 'nema' #nacrt je PK, vise proizvoda moze neimati nacrt
     
-    podaci = (brojNaloga, brojNarudzbe, nacrt)
-
+    podaci = (nacrt, nalog)
+    
     try:
         cursor.execute(upit, podaci)
         vezaSaBazom.commit()
         
     except Error as error:
         print(error)
-
-#Dodaje novi redak u tablicu kolicinaProizvoda
-def unesiKolicinuProizvoda(brojNarudzbe, nacrt, kom):
-    upit ='INSERT INTO kolicinaProizvoda(brojNarudzbe, nacrt, kom)\nVALUES(%s, %s, %s)'
     
-    #Ciscenje podataka
-    if pd.isna(brojNarudzbe):
-        brojNarudzbe = 1111
-    elif pd.isna(nacrt):
-        nacrt = 'nema'
-    podaci = (brojNarudzbe, nacrt, kom)
-
+    
+def unesiNalogNarudzbu(nalog, narudzba):
+    upit ='INSERT INTO nalogNarudzba(nalog, narudzba)\nVALUES(%s, %s)'
+    
+    podaci = (nalog, narudzba)
+    
     try:
         cursor.execute(upit, podaci)
         vezaSaBazom.commit()
         
     except Error as error:
         print(error)
-     
+    
+    
 #Ucitavanja podataka iz excel tablice u dataframe objekt(2d array)
 #Header oznacava pocetak redaka tablice
 tablicaNaloga = pd.read_excel('pregled radnih naloga 2019-10.xls', sheetname='List1', header=1)
@@ -125,16 +102,16 @@ for i in tablicaNaloga.iterrows():
     redak = i[1]
     #Za svaki redak kojemu stupac RN. nije nan, unesi ga u bazu
     if pd.isna(redak[0]) == False:
-        #unesiProizvod(redak['NACRT'], redak['NAZIV ARTIKLA'], redak['MATERIJAL'], redak['DIMENZIJA'], 
-        #              redak['DULJINA'], redak['CNC 1'], redak['CNC 2'])
-        
-        #unesiNarudzbu(redak['NARUDŽ.'], redak['ROK'], redak['NACRT'])
-        #unesiRadniNalog(redak['RN.'], redak['NARUDŽ.'], redak['NACRT'])
-        unesiKolicinuProizvoda(redak['NARUDŽ.'], redak['NACRT'], redak['KOM'])
+        #U slucaju da nepostoji broj narudzbe
+        if pd.isna(redak['NARUDŽ.']):
+            redak['NARUDŽ.'] = narudzbenica_id
+            narudzbenica_id += 1
     
-
-#Brisanje cursor objekta    
+        #unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'])
+        #unesiNarudzbu(redak['NARUDŽ.'])
+        #unesiNalog(redak['RN.'])
+        #unesiNalogPoziciju(redak['NACRT'], redak['RN.'])
+        unesiNalogNarudzbu(redak['RN.'], redak['NARUDŽ.'])
+#Brisanje objekata iz memorije
 cursor.close()
-        
-#Brisanje objekta
 vezaSaBazom.close()
