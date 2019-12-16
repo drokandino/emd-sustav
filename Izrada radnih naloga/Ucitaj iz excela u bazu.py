@@ -10,14 +10,17 @@ vezaSaBazom = MySQLConnection(host='localhost',
 cursor = vezaSaBazom.cursor()
 
 #Funkcija za uons podataka u relaciju pozicija
-def unesiPoziciju(naziv, nacrt):
-    upit ='INSERT INTO pozicija(naziv, nacrt)\nVALUES(%s, %s)'
+def unesiPoziciju(naziv, nacrt, materijal, poz):
+    upit ='INSERT INTO pozicija(naziv, nacrt, idMaterijal, redniBr)\nVALUES(%s, %s, %s, %s)'
     
     if pd.isna(nacrt):
         nacrt = 'nema' #nacrt je PK, vise proizvoda moze neimati nacrt
-    
+    if pd.isna(materijal):
+        materijal = "nema"
+    if pd.isna(poz) or poz =='novo':
+        poz = 0
     #Keriraj tuple sa podacima
-    podaci = (naziv, nacrt)
+    podaci = (naziv, nacrt, materijal, poz)
     
     try:
         cursor.execute(upit, podaci)
@@ -29,17 +32,22 @@ def unesiPoziciju(naziv, nacrt):
 #Ako narudzbenica ne postoji onda se koristi ovaj ID
 narudzbenica_id = 0
 
-def unesiNarudzbu(narudzbenica):
+def unesiNarudzbu(narudzbenica, rok):
     #Koristienje globalne varijable u funkciji
     global narudzbenica_id
     
-    upit ='INSERT INTO narudzba(narudzbenica)\nVALUES(%s)'
+    upit ='INSERT INTO narudzba(narudzbenica, rok)\nVALUES(%s, %s)'
     
     #if pd.isna(narudzbenica):
     #   narudzbenica = narudzbenica_id #narudzbenica je PK!
     #   narudzbenica_id += 1
-        
-    podaci = (narudzbenica,)
+     
+    #Rok(datum)
+    dan = rok[:2]
+    mjesec = rok[3:5]
+    rok = "2019-"+ mjesec + "-" + dan
+    
+    podaci = (narudzbenica, rok)
     
     try:
         cursor.execute(upit, podaci)
@@ -88,8 +96,50 @@ def unesiNalogNarudzbu(nalog, narudzba):
         
     except Error as error:
         print(error)
+
+def unesiMaterijal(materijal):
+    upit ='INSERT INTO materijal(idMaterijal)\nVALUES(%s)'
     
+    if pd.isna(materijal):
+        materijal = "nema" #materijal je PK, nemoze vise redaka imati vrijednost "nema"    
+    podaci = (materijal,)
     
+    try:
+        cursor.execute(upit, podaci)
+        vezaSaBazom.commit()
+        
+    except Error as error:
+        print(error)
+        
+def unesiTehnologiju(tehnologija):
+    upit ='INSERT INTO tehnologija(cnc)\nVALUES(%s)'
+    
+    if pd.isna(tehnologija):
+        tehnologija = "nema"
+        
+    podaci = (tehnologija,)
+    
+    try:
+        cursor.execute(upit, podaci)
+        vezaSaBazom.commit()
+        
+    except Error as error:
+        print(error)
+        
+def unesiTehnologijuPoziciju(cnc, nacrt):
+    upit ='INSERT INTO tehnologijaPozicija(cnc, nacrt)\nVALUES(%s, %s)'
+    
+    if pd.isna(nacrt):
+        nacrt = 'nema' #nacrt je PK, vise proizvoda moze neimati nacrt
+    if pd.isna(cnc):
+        cnc = "nema"
+    podaci = (cnc, nacrt)
+    try:
+        cursor.execute(upit, podaci)
+        vezaSaBazom.commit()
+        
+    except Error as error:
+        print(error)
 #Ucitavanja podataka iz excel tablice u dataframe objekt(2d array)
 #Header oznacava pocetak redaka tablice
 tablicaNaloga = pd.read_excel('pregled radnih naloga 2019-10.xls', sheetname='List1', header=1)
@@ -106,12 +156,18 @@ for i in tablicaNaloga.iterrows():
         if pd.isna(redak['NARUDŽ.']):
             redak['NARUDŽ.'] = narudzbenica_id
             narudzbenica_id += 1
-    
-        #unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'])
-        #unesiNarudzbu(redak['NARUDŽ.'])
-        #unesiNalog(redak['RN.'])
-        #unesiNalogPoziciju(redak['NACRT'], redak['RN.'])
+        
+        unesiMaterijal(redak['MATERIJAL'])
+        unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'], redak['MATERIJAL'], redak['POZ'])
+        unesiTehnologiju(redak['CNC 2'])
+        unesiTehnologiju(redak['CNC 1'])
+        unesiTehnologijuPoziciju(redak['CNC 1'], redak['NACRT'])
+        unesiTehnologijuPoziciju(redak['CNC 2'], redak['NACRT'])
+        unesiNalog(redak['RN.'])
+        unesiNalogPoziciju(redak['NACRT'], redak['RN.'])
+        unesiNarudzbu(redak['NARUDŽ.'], redak['ROK'])
         unesiNalogNarudzbu(redak['RN.'], redak['NARUDŽ.'])
+        
 #Brisanje objekata iz memorije
 cursor.close()
 vezaSaBazom.close()
