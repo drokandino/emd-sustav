@@ -21,7 +21,7 @@ def unesiPoziciju(naziv, nacrt, materijal, poz):
         poz = 0
     #Keriraj tuple sa podacima
     podaci = (naziv, nacrt, materijal, poz)
-    
+     
     try:
         cursor.execute(upit, podaci)
         vezaSaBazom.commit()
@@ -34,7 +34,7 @@ narudzbenica_id = 0
 
 def unesiNarudzbu(narudzbenica, rok):
     #Koristienje globalne varijable u funkciji
-    global narudzbenica_id
+    #global narudzbenica_id
     
     upit ='INSERT INTO narudzba(narudzbenica, rok)\nVALUES(%s, %s)'
     
@@ -48,6 +48,18 @@ def unesiNarudzbu(narudzbenica, rok):
     rok = "2019-"+ mjesec + "-" + dan
     
     podaci = (narudzbenica, rok)
+    
+    try:
+        cursor.execute(upit, podaci)
+        vezaSaBazom.commit()
+        
+    except Error as error:
+        print(error)
+        
+def unesiPozicijaNarudzbu(narudzbenica, nacrt):
+    upit ='INSERT INTO pozicijaNarudzba(nacrt, narudzbenica)\nVALUES(%s, %s)'
+    
+    podaci = (nacrt, narudzbenica)
     
     try:
         cursor.execute(upit, podaci)
@@ -167,6 +179,7 @@ for i in tablicaNaloga.iterrows():
         unesiNalogPoziciju(redak['NACRT'], redak['RN.'])
         unesiNarudzbu(redak['NARUDŽ.'], redak['ROK'])
         unesiNalogNarudzbu(redak['RN.'], redak['NARUDŽ.'])
+        unesiPozicijaNarudzbu(redak['NARUDŽ.'], redak['NACRT'])
         
 #Brisanje objekata iz memorije
 cursor.close()

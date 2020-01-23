@@ -1,5 +1,6 @@
 from mysql.connector import MySQLConnection, Error
 from openpyxl import load_workbook
+import datetime
 
 try:
     #Povezivanje sa bazom
@@ -60,19 +61,19 @@ try:
         cursor2.execute('SELECT nacrt FROM nalogPozicija WHERE nalog = "' + str(nalog[0])+'";')
         nacrti = cursor2.fetchall()
         
-        #Za svaki prethodno dohvanceni nacrt, dohvati iz baze naziv proizvoda
+        #Za svaki prethodno dohvanceni nacrt, dohvati iz baze naziv proizvoda, materijal, cnc
         for i in range(len(nacrti)):
             cursor2.execute('SELECT naziv FROM pozicija WHERE nacrt= "' + str(nacrti[i][0])+'";')    
             naziv = cursor2.fetchall()
             
             #Zapisivanje u excel(template) nacrta i naziva
-            sheet['C'+str(12+i)] = nacrti[i][0]
-            sheet['B'+str(12+i)] = naziv[0][0]  
+            sheet['C'+str(11+i)] = nacrti[i][0]
+            sheet['B'+str(11+i)] = naziv[0][0]  
             
             #Dohvacanje matetrijala iz baze i pisanje u nalog
             cursor2.execute('SELECT idMaterijal FROM pozicija WHERE nacrt= "' + str(nacrti[i][0])+'";')
             materijal = cursor2.fetchall()
-            sheet['D'+str(12+i)] = materijal[0][0]
+            sheet['D'+str(11+i)] = materijal[0][0]
             sheet['B5'] = materijal[0][0]
             
             #Dohvacanje cnc tehnologija i pisanje isith u nalog
@@ -90,12 +91,41 @@ try:
             
             if len(cnc) > 1:
                 cnc_lista.append(cnc[1][0])
-                sheet['J' + str(12+i)] = cnc_lista[0] +'+' + cnc_lista[1]
+                sheet['J' + str(11+i)] = cnc_lista[0] +'+' + cnc_lista[1]
             else:
-                sheet['J' + str(12+i)] = cnc_lista[0]
-                
-        
+                sheet['J' + str(11+i)] = cnc_lista[0]
             
+            #Zapisivanje rednog broja
+            cursor2.execute('SELECT redniBr FROM pozicija WHERE nacrt= "' + str(nacrti[i][0])+'";')
+            redniBr = cursor2.fetchone()
+            sheet['A' + str(11+i)] = redniBr[0]
+            
+# =============================================================================
+#             cursor2.execute('SELECT narudzba FROM nalogNarudzba WHERE nalog= "' + str(nalog[0])+'";')
+#             narudzbe = cursor2.fetchall()
+#             print(len(narudzbe), narudzbe[], len(nacrti))
+#             
+#             if len(narudzbe) == len(nacrti):
+#                 cursor2.execute('SELECT rok FROM narudzba WHERE narudzbenica= "' + str(narudzbe[i][0])+'";')
+#             elif len(narudzbe) < len(nacrti):
+#                cursor2.execute('SELECT rok FROM narudzba WHERE narudzbenica= "' + str(narudzbe[0][0])+'";')
+#                    
+#             rok = cursor2.fetchone()
+#             print(rok)
+#             #sheet['K' + str(11+i)] = rok[0][0]
+# =============================================================================
+            
+            #Zapisivanje roka u nalog
+            #Nalog br. 176, 166 imaju zapisan krivi datum
+            cursor2.execute('SELECT rok FROM narudzba JOIN pozicijaNarudzba USING(narudzbenica) WHERE nacrt = "' + str(nacrti[i][0])+'";')
+            rok = cursor2.fetchone()
+            
+            #Zbog nekog razloga jedan redak iz prethodnog upita je None
+            #To je za randi nalog 180. Taj radni nalog nema nacrt
+            if rok != None:
+                sheet['K' + str(11+i)] = rok[0]
+                print(rok[0])
+                
         #Spremi kao novi file
         nalogTemplate.save('Radni nalog ' + str(nalog[0]) + '.xlsx')
 
