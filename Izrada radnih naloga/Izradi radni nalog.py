@@ -1,6 +1,6 @@
 from mysql.connector import MySQLConnection, Error
 from openpyxl import load_workbook
-import datetime
+
 
 try:
     #Povezivanje sa bazom
@@ -81,7 +81,7 @@ try:
             cnc = cursor2.fetchall()
             cnc_lista = []
             
-            cnc_lista.append(cnc[0][0])
+            cnc_lista.append(cnc[0][0]) 
             
             if cnc[0][0] == 'nema':
                 cnc_lista[0] = ''
@@ -92,6 +92,7 @@ try:
             if len(cnc) > 1:
                 cnc_lista.append(cnc[1][0])
                 sheet['J' + str(11+i)] = cnc_lista[0] +'+' + cnc_lista[1]
+                sheet['B' + str(6+i)] = cnc_lista[0] +'+' + cnc_lista[1]
             else:
                 sheet['J' + str(11+i)] = cnc_lista[0]
             
