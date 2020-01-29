@@ -57,10 +57,10 @@ def unesiNarudzbu(narudzbenica, rok):
     except Error as error:
         print(error)
         
-def unesiPozicijaNarudzbu(narudzbenica, nacrt):
-    upit ='INSERT INTO pozicijaNarudzba(nacrt, narudzbenica)\nVALUES(%s, %s)'
+def unesiPozicijaNarudzbu(narudzbenica, nacrt, komada):
+    upit ='INSERT INTO pozicijaNarudzba(nacrt, narudzbenica, komada)\nVALUES(%s, %s, %s)'
     
-    podaci = (nacrt, narudzbenica)
+    podaci = (nacrt, narudzbenica, komada)
     
     try:
         cursor.execute(upit, podaci)
@@ -180,7 +180,7 @@ for i in tablicaNaloga.iterrows():
         unesiNalogPoziciju(redak['NACRT'], redak['RN.'])
         unesiNarudzbu(redak['NARUDŽ.'], redak['ROK'])
         unesiNalogNarudzbu(redak['RN.'], redak['NARUDŽ.'])
-        unesiPozicijaNarudzbu(redak['NARUDŽ.'], redak['NACRT'])
+        unesiPozicijaNarudzbu(redak['NARUDŽ.'], redak['NACRT'], redak['KOM'])
         
 #Brisanje objekata iz memorije
 cursor.close()

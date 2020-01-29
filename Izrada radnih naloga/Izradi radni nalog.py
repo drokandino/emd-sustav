@@ -76,10 +76,21 @@ try:
             sheet['D'+str(11+i)] = materijal[0][0]
             sheet['B5'] = materijal[0][0]
             
+            #Pisanje dimenzije i duljine u nalog
             cursor2.execute('SELECT dimenzija, duljina FROM pozicija WHERE nacrt = "' + str(nacrti[i][0])+'";')
             dimenzijaDuljina = cursor2.fetchall()
             sheet['E' + str(i + 11)] = dimenzijaDuljina[0][0]
             sheet['F' + str(i + 11)] = dimenzijaDuljina[0][1]
+            
+            #Pisanje broja komada za odredeni nacrt u nalog
+            #Trenutno dok je nacrt jedninstven u tablici pozicijaNarudba
+            #Postoji samo jedan redak sa istim nacrtom, nepostoji npr. (nacrtA, narudbza1)
+            #                                                          (nacrtA, narudzba2)
+            cursor2.execute('SELECT komada FROM pozicijaNarudzba WHERE nacrt = "' + str(nacrti[i][0])+'";')
+            komada = cursor2.fetchall()
+            
+            if len(komada):
+                sheet['G' + str(i + 11)] = komada[0][0]
             
             #Dohvacanje cnc tehnologija i pisanje isith u nalog
             cursor2.execute('SELECT cnc FROM tehnologijaPozicija WHERE nacrt= "' + str(nacrti[i][0])+'";')
