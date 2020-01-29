@@ -10,8 +10,8 @@ vezaSaBazom = MySQLConnection(host='localhost',
 cursor = vezaSaBazom.cursor()
 
 #Funkcija za uons podataka u relaciju pozicija
-def unesiPoziciju(naziv, nacrt, materijal, poz):
-    upit ='INSERT INTO pozicija(naziv, nacrt, idMaterijal, redniBr)\nVALUES(%s, %s, %s, %s)'
+def unesiPoziciju(naziv, nacrt, materijal, poz, dimenzija, duljina):
+    upit ='INSERT INTO pozicija(naziv, nacrt, idMaterijal, redniBr, dimenzija, duljina)\nVALUES(%s, %s, %s, %s, %s, %s)'
     
     if pd.isna(nacrt):
         nacrt = 'nema' #nacrt je PK, vise proizvoda moze neimati nacrt
@@ -19,13 +19,14 @@ def unesiPoziciju(naziv, nacrt, materijal, poz):
         materijal = "nema"
     if pd.isna(poz) or poz =='novo':
         poz = 0
+    
     #Keriraj tuple sa podacima
-    podaci = (naziv, nacrt, materijal, poz)
-     
+    podaci = (naziv, nacrt, materijal, poz, dimenzija , duljina)
+    
+    
     try:
         cursor.execute(upit, podaci)
-        vezaSaBazom.commit()
-        
+        vezaSaBazom.commit()      
     except Error as error:
         print(error)
 
@@ -170,7 +171,7 @@ for i in tablicaNaloga.iterrows():
             narudzbenica_id += 1
         
         unesiMaterijal(redak['MATERIJAL'])
-        unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'], redak['MATERIJAL'], redak['POZ'])
+        unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'], redak['MATERIJAL'], redak['POZ'], redak['DIMENZIJA'], redak['DULJINA'])
         unesiTehnologiju(redak['CNC 2'])
         unesiTehnologiju(redak['CNC 1'])
         unesiTehnologijuPoziciju(redak['CNC 1'], redak['NACRT'])

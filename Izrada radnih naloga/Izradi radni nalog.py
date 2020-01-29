@@ -76,6 +76,11 @@ try:
             sheet['D'+str(11+i)] = materijal[0][0]
             sheet['B5'] = materijal[0][0]
             
+            cursor2.execute('SELECT dimenzija, duljina FROM pozicija WHERE nacrt = "' + str(nacrti[i][0])+'";')
+            dimenzijaDuljina = cursor2.fetchall()
+            sheet['E' + str(i + 11)] = dimenzijaDuljina[0][0]
+            sheet['F' + str(i + 11)] = dimenzijaDuljina[0][1]
+            
             #Dohvacanje cnc tehnologija i pisanje isith u nalog
             cursor2.execute('SELECT cnc FROM tehnologijaPozicija WHERE nacrt= "' + str(nacrti[i][0])+'";')
             cnc = cursor2.fetchall()
