@@ -1,6 +1,8 @@
 import pandas as pd
 from mysql.connector import MySQLConnection, Error
 
+#print(sys.argv[1])
+
 #Otvori vezu sa bazom
 vezaSaBazom = MySQLConnection(host='localhost',
                                database='emd_novi',
@@ -184,38 +186,111 @@ def unesiTehnologijuPoziciju(cnc, nacrt):
         
     except Error as error:
         print(error)
-#Ucitavanja podataka iz excel tablice u dataframe objekt(2d array)
-#Header oznacava pocetak redaka tablice
-tablicaNaloga = pd.read_excel('pregled radnih naloga 2019-10.xls', sheetname='List1', header=1)
 
-#Iteracija kroz cijelu tablicu(dataframe)
-#iterrows() vraca tuple(index, series)
-#series je tip podataka slican arrayu
-for i in tablicaNaloga.iterrows():
-    #Spremi series u redak
-    redak = i[1]
-    #Za svaki redak kojemu stupac RN. nije nan, unesi ga u bazu
-    if pd.isna(redak[0]) == False:
-        #U slucaju da nepostoji broj narudzbe
-        if pd.isna(redak['NARUDŽ.']):
-            redak['NARUDŽ.'] = narudzbenica_id
-            narudzbenica_id += 1
+def ucitajUBazu(path):
+    global narudzbenica_id
+    
+    #Ucitavanja podataka iz excel tablice u dataframe objekt(2d array)
+    #Header oznacava pocetak redaka tablice
+    tablicaNaloga = pd.read_excel(path, sheetname="List1", header=1)
+    
+    #Iteracija kroz cijelu tablicu(dataframe)
+    #iterrows() vraca tuple(index, series)
+    #series je tip podataka slican arrayu
+    for i in tablicaNaloga.iterrows():
+        #Spremi series u redak
+        redak = i[1]
+       
+        #Za svaki redak kojemu stupac RN. nije nan, unesi ga u bazu
+        if pd.isna(redak[0]) == False:
+            #U slucaju da nepostoji broj narudzbe
+            if pd.isna(redak['NARUDŽ.']):
+                redak['NARUDŽ.'] = narudzbenica_id
+                narudzbenica_id += 1
+            
+            unesiAlat(redak['VANJSKI'])
+            unesiAlat(redak['UNUT.'])
+            unesiMaterijal(redak['MATERIJAL'])
+            unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'], redak['MATERIJAL'], redak['POZ'], redak['DIMENZIJA'], redak['DULJINA'], redak['VANJSKI'], redak['UNUT.'])
+            unesiTehnologiju(redak['CNC 2'])
+            unesiTehnologiju(redak['CNC 1'])
+            unesiTehnologijuPoziciju(redak['CNC 1'], redak['NACRT'])
+            unesiTehnologijuPoziciju(redak['CNC 2'], redak['NACRT'])
+            unesiNalog(redak['RN.'])
+            unesiNalogPoziciju(redak['NACRT'], redak['RN.'])
+            unesiNarudzbu(redak['NARUDŽ.'], redak['ROK'])
+            unesiNalogNarudzbu(redak['RN.'], redak['NARUDŽ.'])
+            unesiPozicijaNarudzbu(redak['NARUDŽ.'], redak['NACRT'], redak['KOM'])
         
-        unesiAlat(redak['VANJSKI'])
-        unesiAlat(redak['UNUT.'])
-        unesiMaterijal(redak['MATERIJAL'])
-        unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'], redak['MATERIJAL'], redak['POZ'], redak['DIMENZIJA'], redak['DULJINA'], redak['VANJSKI'], redak['UNUT.'])
-        unesiTehnologiju(redak['CNC 2'])
-        unesiTehnologiju(redak['CNC 1'])
-        unesiTehnologijuPoziciju(redak['CNC 1'], redak['NACRT'])
-        unesiTehnologijuPoziciju(redak['CNC 2'], redak['NACRT'])
-        unesiNalog(redak['RN.'])
-        unesiNalogPoziciju(redak['NACRT'], redak['RN.'])
-        unesiNarudzbu(redak['NARUDŽ.'], redak['ROK'])
-        unesiNalogNarudzbu(redak['RN.'], redak['NARUDŽ.'])
-        unesiPozicijaNarudzbu(redak['NARUDŽ.'], redak['NACRT'], redak['KOM'])
         
+
+
+#Kod za GUI
+#Kod je smjesten u ovoj datoteci jer se pokretanje ove datoteke kroz komandnu liniju ne moze obaviti, a u spyderu sve normalno radi
+#Prvobitni plan je bio pokretati ovu datoteku, kao poziv putem komande linije, iz druge datoteke(JednostavanGui.py)
+import PySimpleGUI as sg
+import os
+
+#pocetni layout prozora
+layout = [ 
+           [sg.Text('Tablica:')], 
+           [sg.Button('Ucitaj tablicu'), sg.Button('Zatvori')]
+         ]
+
+#Funkcija vraca layout ovisno o tome koji layout koristimo
+#layout(string), argument funkcije, oznacava koji koji layout zelimo da funkcija vrati
+def createLayout(tablica, layout):
+    #isti je kao i  prvi layout samo sto se dodatno ispisuje ime datoteke
+    layoutNakonOdabiraDatoteke = [ 
+               [sg.Text('Tablica: ' + tablica)], 
+               [sg.Button('Ucitaj tablicu'), sg.Button("Izradi naloge"), sg.Button('Zatvori')]]
+    
+    layoutNakonIzradeNaloga= [ 
+               [sg.Text('Tablica: ' + tablica)], 
+               [sg.Button('Ucitaj tablicu'), sg.Button("Izradi naloge"), sg.Button('Prikazi naloge'), sg.Button('Zatvori')]]
+    
+    if layout == 'Nakon odabira datoteke':
+        return layoutNakonOdabiraDatoteke
+    elif layout == 'Nakon izrade naloga':
+        return layoutNakonIzradeNaloga
+
+#Napravi prozor sa izabranim layoutom
+window = sg.Window("Izradi naloge").Layout(layout)
+
+#Event handling
+while True:
+    event, values= window.Read()
+    #'Zatvori' referencira button imena 'Zatvori'
+    #Analogno za ostale eventove
+    if event in (None, 'Zatvori'):
+        break
+    
+    if event in (None, 'Ucitaj tablicu'):
+        #U tablici ce biti sadrzano ime izabrane datoteke
+        tablica = sg.PopupGetFile('Please enter a file name')
         
+        #Iz nekog razloga se ne moze napraviti novi prozor sa istim layoutom
+        window.close()
+        window = sg.Window("Izradi naloge").Layout(createLayout(tablica, 'Nakon odabira datoteke'))
+        
+    if event in (None, 'Izradi naloge'):    
+        #Poziv "main" funkcije ovog programa
+        ucitajUBazu(tablica)
+        
+        #Poziv programa Izradi radni nalog.py putem komandne linije
+        os.system("python2  Izradi\ radni\ nalog.py")
+        window.close()
+        window = sg.Window("Izradi naloge").Layout(createLayout(tablica, 'Nakon izrade naloga'))
+        print("Izvrseno")
+    
+    if event in (None, 'Prikazi naloge'):
+        #Otvara file manager. 
+        os.system("pcmanfm-qt")
+    
+window.close()
+del window
+
+
 #Brisanje objekata iz memorije
 cursor.close()
 vezaSaBazom.close()
