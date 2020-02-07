@@ -10,8 +10,8 @@ vezaSaBazom = MySQLConnection(host='localhost',
 cursor = vezaSaBazom.cursor()
 
 #Funkcija za uons podataka u relaciju pozicija
-def unesiPoziciju(naziv, nacrt, materijal, poz, dimenzija, duljina):
-    upit ='INSERT INTO pozicija(naziv, nacrt, idMaterijal, redniBr, dimenzija, duljina)\nVALUES(%s, %s, %s, %s, %s, %s)'
+def unesiPoziciju(naziv, nacrt, materijal, poz, dimenzija, duljina, vanjskiAlat, unutranjiAlat):
+    upit ='INSERT INTO pozicija(naziv, nacrt, idMaterijal, redniBr, dimenzija, duljina, alatVanjski, alatUnutarnji)\nVALUES(%s, %s, %s, %s, %s, %s, %s, %s)'
     
     if pd.isna(nacrt):
         nacrt = 'nema' #nacrt je PK, vise proizvoda moze neimati nacrt
@@ -19,9 +19,17 @@ def unesiPoziciju(naziv, nacrt, materijal, poz, dimenzija, duljina):
         materijal = "nema"
     if pd.isna(poz) or poz =='novo':
         poz = 0
+        
+    if pd.isna(vanjskiAlat) == False and '+' in vanjskiAlat:
+        unutranjiAlat = vanjskiAlat[5:7]
+        vanjskiAlat = vanjskiAlat[0:2]
+    if pd.isna(vanjskiAlat):
+        vanjskiAlat = 'nema'
+    if pd.isna(unutranjiAlat):
+        unutranjiAlat = 'nema'
     
     #Keriraj tuple sa podacima
-    podaci = (naziv, nacrt, materijal, poz, dimenzija , duljina)
+    podaci = (naziv, nacrt, materijal, poz, dimenzija , duljina, vanjskiAlat, unutranjiAlat)
     
     
     try:
@@ -123,6 +131,29 @@ def unesiMaterijal(materijal):
         
     except Error as error:
         print(error)
+
+def unesiAlat(alat):    
+    #Rjesavanje slucaja gdje je alat zapisan kao npr. M6 + M8
+    #Gdje je M6 vanjski navoj, a M8 unutranji navoj ?
+    #Ako je takav slucaj onda se zove, dva puta, ista funkcija sa vanjskim, a poslje sa unutranjim navojem
+    nastaviSaUpitom = True
+    if pd.isna(alat) == False and '+' in alat:
+        nastaviSaUpitom = False
+        unesiAlat(alat[0:2])
+        unesiAlat(alat[5:7])
+    
+    if pd.isna(alat):
+        alat = 'nema'
+    
+    if nastaviSaUpitom == True:    
+        upit ='INSERT INTO alat(ime)\nVALUES(%s)'
+        podaci = (alat,)
+        try:
+            cursor.execute(upit, podaci)
+            vezaSaBazom.commit()
+            
+        except Error as error:
+            print(error)
         
 def unesiTehnologiju(tehnologija):
     upit ='INSERT INTO tehnologija(cnc)\nVALUES(%s)'
@@ -170,8 +201,10 @@ for i in tablicaNaloga.iterrows():
             redak['NARUDŽ.'] = narudzbenica_id
             narudzbenica_id += 1
         
+        unesiAlat(redak['VANJSKI'])
+        unesiAlat(redak['UNUT.'])
         unesiMaterijal(redak['MATERIJAL'])
-        unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'], redak['MATERIJAL'], redak['POZ'], redak['DIMENZIJA'], redak['DULJINA'])
+        unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'], redak['MATERIJAL'], redak['POZ'], redak['DIMENZIJA'], redak['DULJINA'], redak['VANJSKI'], redak['UNUT.'])
         unesiTehnologiju(redak['CNC 2'])
         unesiTehnologiju(redak['CNC 1'])
         unesiTehnologijuPoziciju(redak['CNC 1'], redak['NACRT'])
@@ -181,6 +214,7 @@ for i in tablicaNaloga.iterrows():
         unesiNarudzbu(redak['NARUDŽ.'], redak['ROK'])
         unesiNalogNarudzbu(redak['RN.'], redak['NARUDŽ.'])
         unesiPozicijaNarudzbu(redak['NARUDŽ.'], redak['NACRT'], redak['KOM'])
+        
         
 #Brisanje objekata iz memorije
 cursor.close()
