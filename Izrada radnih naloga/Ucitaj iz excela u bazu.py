@@ -187,6 +187,7 @@ def unesiTehnologijuPoziciju(cnc, nacrt):
     except Error as error:
         print(error)
 
+#path je put do excel datoteke
 def ucitajUBazu(path):
     global narudzbenica_id
     
