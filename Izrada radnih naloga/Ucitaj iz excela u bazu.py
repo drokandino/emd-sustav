@@ -11,6 +11,7 @@ vezaSaBazom = MySQLConnection(host='localhost',
 #Incijalizacija cursor objekta
 cursor = vezaSaBazom.cursor()
 
+
 #Funkcija za uons podataka u relaciju pozicija
 def unesiPoziciju(naziv, nacrt, materijal, poz, dimenzija, duljina, vanjskiAlat, unutranjiAlat):
     upit ='INSERT INTO pozicija(naziv, nacrt, idMaterijal, redniBr, dimenzija, duljina, alatVanjski, alatUnutarnji)\nVALUES(%s, %s, %s, %s, %s, %s, %s, %s)'
@@ -193,7 +194,7 @@ def ucitajUBazu(path):
     
     #Ucitavanja podataka iz excel tablice u dataframe objekt(2d array)
     #Header oznacava pocetak redaka tablice
-    tablicaNaloga = pd.read_excel(path, sheetname="List1", header=1)
+    tablicaNaloga = pd.read_excel(path, sheet_name="List1", header=1)
     
     #Iteracija kroz cijelu tablicu(dataframe)
     #iterrows() vraca tuple(index, series)
@@ -244,11 +245,11 @@ def createLayout(tablica, layout):
     #isti je kao i  prvi layout samo sto se dodatno ispisuje ime datoteke
     layoutNakonOdabiraDatoteke = [ 
                [sg.Text('Tablica: ' + tablica)], 
-               [sg.Button('Ucitaj tablicu'), sg.Button("Izradi naloge"), sg.Button('Zatvori')]]
+               [sg.Button('Ucitaj tablicu'), sg.Button("Ucitaj naloge u bazu"), sg.Button("Izradi naloge"), sg.Button('Zatvori')]]
     
     layoutNakonIzradeNaloga= [ 
                [sg.Text('Tablica: ' + tablica)], 
-               [sg.Button('Ucitaj tablicu'), sg.Button("Izradi naloge"), sg.Button('Prikazi naloge'), sg.Button('Zatvori')]]
+               [sg.Button('Ucitaj tablicu'), sg.Button('Prikazi naloge'), sg.Button('Zatvori')]]
     
     if layout == 'Nakon odabira datoteke':
         return layoutNakonOdabiraDatoteke
@@ -273,13 +274,14 @@ while True:
         #Iz nekog razloga se ne moze napraviti novi prozor sa istim layoutom
         window.close()
         window = sg.Window("Izradi naloge").Layout(createLayout(tablica, 'Nakon odabira datoteke'))
-        
-    if event in (None, 'Izradi naloge'):    
+    
+    if event in (None, 'Ucitaj naloge u bazu'):
         #Poziv "main" funkcije ovog programa
         ucitajUBazu(tablica)
-        
+    
+    if event in (None, 'Izradi naloge'):    
         #Poziv programa Izradi radni nalog.py putem komandne linije
-        os.system("python2  Izradi\ radni\ nalog.py")
+        os.system("python3.7  Izradi\ radni\ nalog.py")
         window.close()
         window = sg.Window("Izradi naloge").Layout(createLayout(tablica, 'Nakon izrade naloga'))
         print("Izvrseno")

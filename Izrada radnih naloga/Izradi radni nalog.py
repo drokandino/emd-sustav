@@ -44,11 +44,15 @@ except Error as error:
 
 try:
     #While petlja prolazi kroz svaki nalog
-    cursor.execute('SELECT brojNaloga FROM radniNalog')
+    cursor.execute('SELECT brojNaloga, generiran FROM radniNalog')
     while True:
         nalog = cursor.fetchone()
         if nalog == None:
             break
+        
+        #Provjera ako je nalog vec generiran
+        if nalog[1] == True:
+            continue
         
         #Ucitavanje template objekta i ucitavanje sheet-a
         nalogTemplate = load_workbook('Primjeri naloga/radni nalog template.xlsx') #Work book
@@ -148,7 +152,12 @@ try:
             if rok != None:
                 sheet['K' + str(11+i)] = rok[0]
                 print(rok[0])
-                
+        try:
+            cursor2.execute('UPDATE radniNalog SET generiran = "1" WHERE brojNaloga = "' + str(nalog[0]) + '"')
+            vezaSabazom.commit()
+        except Error as error:
+            print(error)
+        
         #Spremi kao novi file
         nalogTemplate.save('Radni nalog ' + str(nalog[0]) + '.xlsx')
 
