@@ -81,11 +81,23 @@ try:
             sheet['B5'] = materijal[0][0]
             
             #Pisanje navoja
-            cursor2.execute('SELECT alatVanjski, alatUnutarnji FROM pozicija WHERE nacrt= "' + str(nacrti[i][0])+'";')
-            alati = cursor2.fetchall()
-            sheet['H' + str(11+i)] = alati[0][0]
-            sheet['I' + str(11+i)] = alati[0][1]
-            
+            #vanjski
+# =============================================================================
+#             cursor2.execute('SELECT alat FROM alatPozicija WHERE nacrt= "' + str(nacrti[i][0])+'" AND mjestoNavoja = "vanjski";')
+#             alati = cursor2.fetchall()
+#             
+#             #Ako postoji 
+#             if alati:
+#                 sheet['H' + str(11+i)] = alati[0][0]
+#             
+#             #unutranji
+#             cursor2.execute('SELECT alat FROM alatPozicija WHERE nacrt= "' + str(nacrti[i][0])+'" AND mjestoNavoja = "unutarnji";')
+#             alati = cursor2.fetchall()
+#             #Ako postoji 
+#             if alati:
+#                 sheet['I' + str(11+i)] = alati[0][0]
+#             
+# =============================================================================
             #Pisanje dimenzije i duljine u nalog
             cursor2.execute('SELECT dimenzija, duljina FROM pozicija WHERE nacrt = "' + str(nacrti[i][0])+'";')
             dimenzijaDuljina = cursor2.fetchall()

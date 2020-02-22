@@ -11,10 +11,23 @@ vezaSaBazom = MySQLConnection(host='localhost',
 #Incijalizacija cursor objekta
 cursor = vezaSaBazom.cursor()
 
+def unesiAlatPoziciju(nacrt, alat, mjesto):
+    upit = 'INSERT INTO alatPozicija(nacrt, alat, mjestoNavoja)\n VALUES(%s, %s, %s)'
+    
+    if pd.isna(alat):
+        alat = 'nema'
+   
+    podaci = (nacrt, alat, mjesto)
+    
+    try:
+        cursor.execute(upit, podaci)
+        vezaSaBazom.commit()      
+    except Error as error:
+        print(error)
 
 #Funkcija za uons podataka u relaciju pozicija
-def unesiPoziciju(naziv, nacrt, materijal, poz, dimenzija, duljina, vanjskiAlat, unutranjiAlat):
-    upit ='INSERT INTO pozicija(naziv, nacrt, idMaterijal, redniBr, dimenzija, duljina, alatVanjski, alatUnutarnji)\nVALUES(%s, %s, %s, %s, %s, %s, %s, %s)'
+def unesiPoziciju(naziv, nacrt, materijal, poz, dimenzija, duljina):
+    upit ='INSERT INTO pozicija(naziv, nacrt, idMaterijal, redniBr, dimenzija, duljina)\nVALUES(%s, %s, %s, %s, %s, %s)'
     
     if pd.isna(nacrt):
         nacrt = 'nema' #nacrt je PK, vise proizvoda moze neimati nacrt
@@ -22,18 +35,9 @@ def unesiPoziciju(naziv, nacrt, materijal, poz, dimenzija, duljina, vanjskiAlat,
         materijal = "nema"
     if pd.isna(poz) or poz =='novo':
         poz = 0
-        
-    if pd.isna(vanjskiAlat) == False and '+' in vanjskiAlat:
-        unutranjiAlat = vanjskiAlat[5:7]
-        vanjskiAlat = vanjskiAlat[0:2]
-    if pd.isna(vanjskiAlat):
-        vanjskiAlat = 'nema'
-    if pd.isna(unutranjiAlat):
-        unutranjiAlat = 'nema'
     
     #Keriraj tuple sa podacima
-    podaci = (naziv, nacrt, materijal, poz, dimenzija , duljina, vanjskiAlat, unutranjiAlat)
-    
+    podaci = (naziv, nacrt, materijal, poz, dimenzija , duljina)
     
     try:
         cursor.execute(upit, podaci)
@@ -104,7 +108,7 @@ def unesiNalogPoziciju(nacrt, nalog):
     try:
         cursor.execute(upit, podaci)
         vezaSaBazom.commit()
-        
+             
     except Error as error:
         print(error)
     
@@ -210,10 +214,17 @@ def ucitajUBazu(path):
                 redak['NARUDŽ.'] = narudzbenica_id
                 narudzbenica_id += 1
             
+            #Kada su za alat spojene dvije celije
+            if pd.isna(redak['VANJSKI']) == False and '+' in redak['VANJSKI']:
+                redak['UNUT.'] = redak['VANJSKI'][5:7]
+                redak['VANJSKI'] = redak['VANJSKI'][0:2]
+            
             unesiAlat(redak['VANJSKI'])
             unesiAlat(redak['UNUT.'])
             unesiMaterijal(redak['MATERIJAL'])
-            unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'], redak['MATERIJAL'], redak['POZ'], redak['DIMENZIJA'], redak['DULJINA'], redak['VANJSKI'], redak['UNUT.'])
+            unesiPoziciju(redak['NAZIV ARTIKLA'], redak['NACRT'], redak['MATERIJAL'], redak['POZ'], redak['DIMENZIJA'], redak['DULJINA'])
+            unesiAlatPoziciju(redak['NACRT'], redak['UNUT.'], 'unutarnji')
+            unesiAlatPoziciju(redak['NACRT'], redak['VANJSKI'], 'vanjski')
             unesiTehnologiju(redak['CNC 2'])
             unesiTehnologiju(redak['CNC 1'])
             unesiTehnologijuPoziciju(redak['CNC 1'], redak['NACRT'])
