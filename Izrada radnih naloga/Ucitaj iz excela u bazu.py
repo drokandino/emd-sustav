@@ -48,10 +48,7 @@ def unesiPoziciju(naziv, nacrt, materijal, poz, dimenzija, duljina):
 #Ako narudzbenica ne postoji onda se koristi ovaj ID
 narudzbenica_id = 0
 
-def unesiNarudzbu(narudzbenica, rok):
-    #Koristienje globalne varijable u funkciji
-    #global narudzbenica_id
-    
+def unesiNarudzbu(narudzbenica, rok): 
     upit ='INSERT INTO narudzba(narudzbenica, rok)\nVALUES(%s, %s)'
     
     #if pd.isna(narudzbenica):
@@ -59,6 +56,7 @@ def unesiNarudzbu(narudzbenica, rok):
     #   narudzbenica_id += 1
      
     #Rok(datum)
+    #Oblikovanje datma u sql format
     dan = rok[:2]
     mjesec = rok[3:5]
     rok = "2019-"+ mjesec + "-" + dan
@@ -192,6 +190,7 @@ def unesiTehnologijuPoziciju(cnc, nacrt):
     except Error as error:
         print(error)
 
+#glavna funkcija programa
 #path je put do excel datoteke
 def ucitajUBazu(path):
     global narudzbenica_id
@@ -239,8 +238,7 @@ def ucitajUBazu(path):
 
 
 #Kod za GUI
-#Kod je smjesten u ovoj datoteci jer se pokretanje ove datoteke kroz komandnu liniju ne moze obaviti, a u spyderu sve normalno radi
-#Prvobitni plan je bio pokretati ovu datoteku, kao poziv putem komande linije, iz druge datoteke(JednostavanGui.py)
+#Prvobitna zamisao je bila pokretati ovu datoteku, kao poziv putem komande linije, iz druge datoteke(JednostavanGui.py)
 import PySimpleGUI as sg
 import os
 
@@ -251,7 +249,8 @@ layout = [
          ]
 
 #Funkcija vraca layout ovisno o tome koji layout koristimo
-#layout(string), argument funkcije, oznacava koji koji layout zelimo da funkcija vrati
+#tablcia je ime datoteke koju smo prethodno odabrali
+#layout(string) je argument funkcije, oznacava koji koji layout zelimo da funkcija vrati
 def createLayout(tablica, layout):
     #isti je kao i  prvi layout samo sto se dodatno ispisuje ime datoteke
     layoutNakonOdabiraDatoteke = [ 
@@ -270,8 +269,9 @@ def createLayout(tablica, layout):
 #Napravi prozor sa izabranim layoutom
 window = sg.Window("Izradi naloge").Layout(layout)
 
-#Event handling
+#Glavna petlja GUI-a
 while True:
+    #Event handling
     event, values= window.Read()
     #'Zatvori' referencira button imena 'Zatvori'
     #Analogno za ostale eventove
@@ -279,8 +279,8 @@ while True:
         break
     
     if event in (None, 'Ucitaj tablicu'):
-        #U tablici ce biti sadrzano ime izabrane datoteke
-        tablica = sg.PopupGetFile('Please enter a file name')
+        #U varijabli tablica ce biti sadrzano ime izabrane datoteke
+        tablica = sg.PopupGetFile('Odaberite datoteku')
         
         #Iz nekog razloga se ne moze napraviti novi prozor sa istim layoutom
         window.close()
@@ -289,6 +289,8 @@ while True:
     if event in (None, 'Ucitaj naloge u bazu'):
         #Poziv "main" funkcije ovog programa
         ucitajUBazu(tablica)
+        cursor.close()
+        vezaSaBazom.close()
     
     if event in (None, 'Izradi naloge'):    
         #Poziv programa Izradi radni nalog.py putem komandne linije
@@ -305,6 +307,4 @@ window.close()
 del window
 
 
-#Brisanje objekata iz memorije
-cursor.close()
-vezaSaBazom.close()
+

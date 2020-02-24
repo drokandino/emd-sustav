@@ -1,7 +1,6 @@
 from mysql.connector import MySQLConnection, Error
 from openpyxl import load_workbook
 
-
 try:
     #Povezivanje sa bazom
     vezaSabazom = MySQLConnection(host='localhost',
@@ -11,47 +10,23 @@ try:
     #Cursor objekti za sljanje upita bazi
     cursor = vezaSabazom.cursor(buffered=True)
     cursor2 = vezaSabazom.cursor(buffered=True)
-    
-# =============================================================================
-#     #Izvrsavanje upita
-#     cursor.execute('SELECT * FROM radniNalog;')
-#     
-#     #Uzima redak iz izalza prethodng upita. Taj redak pretvara u array
-#     redak = cursor.fetchone()
-# =============================================================================
-    
-# =============================================================================
-#     #Zapisivanje u datoteku
-#     file.write("Broj radnog naloga: " + str(redak[0]) + "\n" +
-#                "Broj narudzbe: " + str(redak[1]) + "\n" +
-#                "Nacrt: " + str(redak[2]) + "\n")
-#     
-# =============================================================================
-    
-# =============================================================================
-#     #Dohvacanje podataka za isti radni nalog iz druge tablice
-#     pomocniCursor.execute('SELECT * FROM proizvod WHERE nacrt = "' + str(redak[2]) + '";')
-#     redak2 = pomocniCursor.fetchone()
-#     print(redak2)
-# =============================================================================
-    
 
 except Error as error:
     print(error)
 
 
-    
-
 try:
     #While petlja prolazi kroz svaki nalog
     cursor.execute('SELECT brojNaloga, generiran FROM radniNalog')
     while True:
+        #Fetchamo brojeve naloga sve dok ne prodemo sve naloge, dodemo do kraja
+        #fetchone() vraca array [broj_naloga, generiran]
         nalog = cursor.fetchone()
         if nalog == None:
             break
         
         #Provjera ako je nalog vec generiran
-        if nalog[1] == True:
+        if nalog[1] == True:    
             continue
         
         #Ucitavanje template objekta i ucitavanje sheet-a
@@ -59,13 +34,14 @@ try:
         sheet = nalogTemplate.get_sheet_by_name("List1")    
         
         #Zapisivanje broja naloga
+        #J1 predstavlja indexe čelije
         sheet['J1'] = nalog[0]
         
         #Dohvacanje svih nacrta(proizvoda) koji pripadaju trenutnom radnom nalogu
         cursor2.execute('SELECT nacrt FROM nalogPozicija WHERE nalog = "' + str(nalog[0])+'";')
         nacrti = cursor2.fetchall()
         
-        #Za svaki prethodno dohvanceni nacrt, dohvati iz baze naziv proizvoda, materijal, cnc
+        #Za svaki prethodno dohvanceni nacrt, dohvati iz baze naziv proizvoda, materijal, cnc...
         for i in range(len(nacrti)):
             cursor2.execute('SELECT naziv FROM pozicija WHERE nacrt= "' + str(nacrti[i][0])+'";')    
             naziv = cursor2.fetchall()
@@ -82,23 +58,20 @@ try:
             
             #Pisanje navoja
             #vanjski
-# =============================================================================
-#             cursor2.execute('SELECT alat FROM alatPozicija WHERE nacrt= "' + str(nacrti[i][0])+'" AND mjestoNavoja = "vanjski";')
-#             alati = cursor2.fetchall()
-#             
-#             #Ako postoji 
-#             if alati:
-#                 sheet['H' + str(11+i)] = alati[0][0]
-#             
-#             #unutranji
-#             cursor2.execute('SELECT alat FROM alatPozicija WHERE nacrt= "' + str(nacrti[i][0])+'" AND mjestoNavoja = "unutarnji";')
-#             alati = cursor2.fetchall()
-#             #Ako postoji 
-#             if alati:
-#                 sheet['I' + str(11+i)] = alati[0][0]
-#             
-# =============================================================================
-            #Pisanje dimenzije i duljine u nalog
+            cursor2.execute('SELECT alat FROM alatPozicija WHERE nacrt= "' + str(nacrti[i][0])+'" AND mjestoNavoja = "vanjski";')
+            alati = cursor2.fetchall()
+            #Ako postoji 
+            if alati:
+                sheet['H' + str(11+i)] = alati[0][0]
+            
+            #unutranji
+            cursor2.execute('SELECT alat FROM alatPozicija WHERE nacrt= "' + str(nacrti[i][0])+'" AND mjestoNavoja = "unutarnji";')
+            alati = cursor2.fetchall()
+            #Ako postoji 
+            if alati:
+                sheet['I' + str(11+i)] = alati[0][0]
+             
+           #Pisanje dimenzije i duljine u nalog
             cursor2.execute('SELECT dimenzija, duljina FROM pozicija WHERE nacrt = "' + str(nacrti[i][0])+'";')
             dimenzijaDuljina = cursor2.fetchall()
             sheet['E' + str(i + 11)] = dimenzijaDuljina[0][0]
@@ -139,21 +112,6 @@ try:
             redniBr = cursor2.fetchone()
             sheet['A' + str(11+i)] = redniBr[0]
             
-# =============================================================================
-#             cursor2.execute('SELECT narudzba FROM nalogNarudzba WHERE nalog= "' + str(nalog[0])+'";')
-#             narudzbe = cursor2.fetchall()
-#             print(len(narudzbe), narudzbe[], len(nacrti))
-#             
-#             if len(narudzbe) == len(nacrti):
-#                 cursor2.execute('SELECT rok FROM narudzba WHERE narudzbenica= "' + str(narudzbe[i][0])+'";')
-#             elif len(narudzbe) < len(nacrti):
-#                cursor2.execute('SELECT rok FROM narudzba WHERE narudzbenica= "' + str(narudzbe[0][0])+'";')
-#                    
-#             rok = cursor2.fetchone()
-#             print(rok)
-#             #sheet['K' + str(11+i)] = rok[0][0]
-# =============================================================================
-            
             #Zapisivanje roka u nalog
             #Nalog br. 176, 166 imaju zapisan krivi datum
             cursor2.execute('SELECT rok FROM narudzba JOIN pozicijaNarudzba USING(narudzbenica) WHERE nacrt = "' + str(nacrti[i][0])+'";')
@@ -164,15 +122,13 @@ try:
             if rok != None:
                 sheet['K' + str(11+i)] = rok[0]
                 print(rok[0])
-        try:
-            cursor2.execute('UPDATE radniNalog SET generiran = "1" WHERE brojNaloga = "' + str(nalog[0]) + '"')
-            vezaSabazom.commit()
-        except Error as error:
-            print(error)
         
         #Spremi kao novi file
         nalogTemplate.save('Radni nalog ' + str(nalog[0]) + '.xlsx')
-
+        
+        #Označujemo trenutni nalog kao generiran
+        cursor2.execute('UPDATE radniNalog SET generiran = "1" WHERE brojNaloga = "' + str(nalog[0]) + '"')
+        vezaSabazom.commit()
             
 except Error as error:
     print(error)
